@@ -1,0 +1,293 @@
+/* 头图间距 */
+.obsidian-banner-wrapper {
+  margin-top: 0 !important;
+}
+
+/* 隐藏顶部右侧操作栏：鼠标悬停（触碰）时才显示按钮，平时隐藏 */
+.view-header .view-actions {
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.view-header:hover .view-actions {
+  opacity: 1;
+}
+
+/* 隐藏底部操作栏 */
+.mobile-toolbar {
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+.mobile-toolbar:active,
+.mobile-toolbar:focus-within {
+  opacity: 1;
+}
+
+/* 隐藏底部状态栏 */
+.status-bar {
+  display: none !important;
+}
+
+/* ===== 聊天主容器 ===== */
+.chat-container {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 200px 0;
+  background: transparent;
+}
+
+/* ===== 聊天项容器 ===== */
+.chat-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  animation: slideInUp 0.3s ease-out;
+}
+
+@keyframes slideInUp {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ===== 头像样式 ===== */
+.chat-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  object-fit: cover;
+  flex-shrink: 0;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  transition: transform 0.2s ease;
+}
+
+.chat-avatar:hover {
+  transform: scale(1.1);
+}
+
+/* ===== 内容包装器 ===== */
+.chat-content {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-width: 65%;
+}
+
+/* ===== 气泡消息 ===== */
+.chat-message {
+  width: fit-content;
+  padding: 12px 16px;
+  border-radius: 12px;
+  font-size: 14px;
+  line-height: 1.6;
+  word-wrap: break-word;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+  transition: all 0.2s ease;
+  background-color: var(--background-secondary);
+  color: var(--text-normal);
+  border: 1px solid var(--background-modifier-border);
+}
+
+/* 消息样式 */
+.chat-message {
+  border-bottom-left-radius: 4px;
+}
+
+.chat-message:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+  transform: translateY(-2px);
+}
+
+/* ===== 时间戳 ===== */
+.chat-time {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin: 4px 4px 0 4px;
+  transition: color 0.2s ease;
+}
+
+.chat-item:hover .chat-time {
+  color: var(--text-accent);
+}
+
+/* ===== 按钮样式 ===== */
+.btn-add-message {
+  width: 56px;
+  height: 56px;
+  padding: 0;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: none !important;
+  background: rgb(130, 211, 243) !important;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: fixed;
+  bottom: 10px;
+  right: 15px;
+  font-size: 0;
+}
+
+/* 绘制 + 符号 */
+.btn-add-message::before {
+  content: "";
+  position: absolute;
+  width: 24px;
+  height: 3px;
+  background: white;
+  border-radius: 2px;
+}
+
+.btn-add-message::after {
+  content: "";
+  position: absolute;
+  width: 3px;
+  height: 24px;
+  background: white;
+  border-radius: 2px;
+}
+
+.btn-add-message:hover {
+  transform: scale(1.1);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.25);
+}
+
+.btn-add-message:active {
+  transform: scale(0.95);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+button.mod-cta:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.25);
+}
+
+button.mod-cta:active {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+/* ===== 输入弹窗覆盖层 ===== */
+.chat-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.4);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 9999;
+  animation: fadeIn 0.2s ease-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* ===== 弹窗内容 ===== */
+.chat-modal-box {
+  background: var(--modal-background);
+  padding: 24px;
+  border-radius: 12px;
+  min-width: 400px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+  border: 1px solid var(--background-modifier-border);
+  animation: slideUp 0.3s ease-out;
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ===== 输入框 ===== */
+.chat-modal-input {
+  width: 100%;
+  padding: 12px 14px;
+  font-size: 14px;
+  border: 1.5px solid var(--background-modifier-border);
+  border-radius: 8px;
+  background: var(--background-secondary);
+  color: var(--text-normal);
+  box-sizing: border-box;
+  transition: all 0.2s ease;
+  font-family: inherit;
+}
+
+.chat-modal-input:focus {
+  outline: none;
+  border-color: var(--interactive-accent);
+  box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.1);
+}
+
+.chat-modal-input::placeholder {
+  color: var(--text-muted);
+}
+
+/* ===== 按钮容器 ===== */
+.chat-modal-buttons {
+  display: flex;
+  gap: 10px;
+  margin-top: 16px;
+  justify-content: flex-end;
+}
+
+/* ===== 弹窗按钮 ===== */
+.chat-modal-btn {
+  padding: 8px 18px;
+  border: none;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.chat-modal-btn-cancel {
+  background: var(--background-secondary);
+  color: var(--text-normal);
+  border: 1px solid var(--background-modifier-border);
+}
+
+.chat-modal-btn-cancel:hover {
+  background: var(--background-tertiary);
+  border-color: var(--text-muted);
+}
+
+.chat-modal-btn-confirm {
+  background: var(--interactive-accent);
+  color: white;
+}
+
+.chat-modal-btn-confirm:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.chat-modal-btn-confirm:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
