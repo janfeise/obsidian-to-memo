@@ -1,30 +1,30 @@
 /* 头图间距 */
-.obsidian-banner-wrapper {
+.app-container:has(.chat-container) .obsidian-banner-wrapper {
   margin-top: 0 !important;
 }
 
 /* 隐藏顶部右侧操作栏：鼠标悬停（触碰）时才显示按钮，平时隐藏 */
-.view-header .view-actions {
+.app-container:has(.chat-container) .view-header .view-actions {
   opacity: 0;
   transition: opacity 0.2s ease;
 }
 
-.view-header:hover .view-actions {
+.app-container:has(.chat-container) .view-header:hover .view-actions {
   opacity: 1;
 }
 
 /* 隐藏底部操作栏 */
-.mobile-toolbar {
+.app-container:has(.chat-container) .mobile-toolbar {
   opacity: 0;
   transition: opacity 0.2s;
 }
-.mobile-toolbar:active,
-.mobile-toolbar:focus-within {
+.app-container:has(.chat-container) .mobile-toolbar:active,
+.app-container:has(.chat-container) .mobile-toolbar:focus-within {
   opacity: 1;
 }
 
 /* 隐藏底部状态栏 */
-.status-bar {
+.app-container:has(.chat-container) .status-bar {
   display: none !important;
 }
 
