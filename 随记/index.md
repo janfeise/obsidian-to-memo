@@ -136,6 +136,8 @@ const messages = await Promise.all(
 )
 
 // ===== 渲染消息 =====
+// 使用 documentFragment 避免频繁的dom插入
+const fragment = new DocumentFragment();
 for (let el of messages) {
   if (!el) continue;
 
@@ -168,8 +170,9 @@ for (let el of messages) {
   item.appendChild(avatar)
   item.appendChild(content)
 
-  container.appendChild(item)
+  fragment.appendChild(item);
 }
+container.appendChild(fragment)
 
 dv.container.appendChild(container)
 ```
