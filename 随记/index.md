@@ -5,8 +5,9 @@ banner_x: 0.5
 ---
 
 ```dataviewjs
-let pages = dv.pages('"随记/messages"')
-  .sort(p => p.time, 'desc')  // 'asc' 或 'desc'
+let pages = app.vault.getFiles()
+  .filter(f => f.path.startsWith("随记/messages/") && f.extension === "md")
+  .sort((a, b) => b.name.localeCompare(a.name)); // 按日期降序
 
 // ===== avatar 配置 =====
 let avatarMap = {
@@ -39,17 +40,44 @@ function createMessageItem(sender, body, time, avatarMap) {
   message.innerText = body
 
   // time
-  let time = document.createElement("div")
-  time.className = "chat-time"
-  time.innerText = new Date(time).toLocaleString()
+  let timeElement = document.createElement("div")
+  timeElement.className = "chat-time"
+  timeElement.innerText = new Date(time).toLocaleString()
 
   content.appendChild(message)
-  content.appendChild(time)
+  content.appendChild(timeElement)
 
   item.appendChild(avatar)
   item.appendChild(content)
 
   return item
+}
+
+// ===== 解析单个文件中的所有消息: 由于按天存储，一个文件可能存在多个数据 =====
+function parseMessagesFromContent(text) {
+  let messages = [];
+  let parts = text.split("---");
+
+  // 第一个元素通常为空（如果文件以 --- 开头）或 frontmatter 之前的内容
+  // 从索引 1 开始，每两个元素为一组（yaml + body）
+  for (let i = 1; i < parts.length; i += 2) {
+    let yaml = parts[i].trim();
+    let body = (parts[i + 1] || "").trim();
+    if (!yaml) continue;
+
+    let timeMatch = yaml.match(/^time:\s*(.+)$/m);
+    let senderMatch = yaml.match(/^sender:\s*(.+)$/m);
+
+    if (timeMatch && senderMatch) {
+      messages.push({
+        time: new Date(timeMatch[1]),
+        sender: senderMatch[1].trim(),
+        body: body
+      });
+    }
+  }
+
+  return messages;
 }
 
 // ===== 输入弹窗 =====
@@ -93,12 +121,10 @@ function showInput(callback) {
     if (!input.value.trim()) return
 
     let now = new Date()
+    // 按天存储
     let dateStr = now.getFullYear() +
       '-' + String(now.getMonth() + 1).padStart(2, '0') +
-      '-' + String(now.getDate()).padStart(2, '0') +
-      '-' + String(now.getHours()).padStart(2, '0') +
-      String(now.getMinutes()).padStart(2, '0') +
-      String(now.getSeconds()).padStart(2, '0')
+      '-' + String(now.getDate()).padStart(2, '0');
     let filePath = `随记/messages/${dateStr}.md`
 
     let content = `---
@@ -108,8 +134,12 @@ sender: me
 
 ${input.value}
 `
-
-    await app.vault.create(filePath, content)
+    let file = app.vault.getAbstractFileByPath(filePath);
+    if (file) {
+      await app.vault.append(file, "\n\n" + content.trim() + "\n"); // 文件存在，追加
+    } else {
+      await app.vault.create(filePath, content.trim() + "\n"); // 不存在，创建
+    }
 
     document.body.removeChild(overlay)
 
@@ -151,31 +181,26 @@ btn.onclick = () => showInput()
 dv.container.appendChild(btn)
 
 // ===== 并行读取数据 =====
-const messages = await Promise.all(
-  pages.map(async p => {
-    let file = app.vault.getAbstractFileByPath(p.file.path);
-
-    if (!file || file.extension !== "md") return null;
+const allMessagesArrays = await Promise.all(
+  pages.map(async file => {
+    if (!file || file.extension !== "md") return [];
 
     let text = await app.vault.read(file);
-    let parts = text.split("---")
 
-    return {
-      p,
-      body: parts.length >= 3
-      ? parts.slice(2).join("---").trim()
-      : text.trim()
-    }
+    return parseMessagesFromContent(text); // 返回消息数组
   })
 )
+
+// ===== 拍平数组并排序 =====
+let messages = allMessagesArrays.flat().sort((a, b) => b.time - a.time);
 
 // ===== 渲染消息 =====
 // 使用 documentFragment 避免频繁的dom插入
 const fragment = new DocumentFragment();
-for (let el of messages) {
-  if (!el) continue;
+for (let msg of messages) {
+  if (!msg) continue;
 
-  let item = createMessageItem(el.p.sender, el.body, el.p.time, avatarMap)
+  let item = createMessageItem(msg.p.sender, msg.body, msg.p.time, avatarMap)
 
   fragment.appendChild(item);
 }
