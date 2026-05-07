@@ -116,16 +116,36 @@ btn.onclick = () => showInput()
 
 dv.container.appendChild(btn)
 
+// ===== 并行读取数据 =====
+const messages = await Promise.all(
+  pages.map(async p => {
+    let file = app.vault.getAbstractFileByPath(p.file.path);
+
+    if (!file || file.extension !== "md") return null;
+
+    let text = await app.vault.read(file);
+    let parts = text.split("---")
+
+    return {
+      p,
+      body: parts.length >= 3
+      ? parts.slice(2).join("---").trim()
+      : text.trim()
+    }
+  })
+)
+
 // ===== 渲染消息 =====
-for (let p of pages) {
+for (let el of messages) {
+  if (!el) continue;
 
   let item = document.createElement("div")
-  item.className = "chat-item" + (p.sender === "me" ? " chat-item-me" : "")
+  item.className = "chat-item" + (el.p.sender === "me" ? " chat-item-me" : "")
 
   // avatar
   let avatar = document.createElement("img")
   avatar.className = "chat-avatar"
-  avatar.src = avatarMap[p.sender] || avatarMap["me"]
+  avatar.src = avatarMap[el.p.sender] || avatarMap["me"]
 
   // content
   let content = document.createElement("div")
@@ -135,21 +155,12 @@ for (let p of pages) {
   message.className = "chat-message"
 
   // 直接读取 body（去掉 YAML）
-  let file = app.vault.getAbstractFileByPath(p.file.path)
-  if (file && file.extension === "md") {
-    let text = await app.vault.read(file)
-    let parts = text.split("---")
-    if (parts.length >= 3) {
-      message.innerText = parts.slice(2).join("---").trim()
-    } else {
-      message.innerText = text.trim()
-    }
-  }
+  message.innerText = el.body
 
   // time
   let time = document.createElement("div")
   time.className = "chat-time"
-  time.innerText = new Date(p.time).toLocaleString()
+  time.innerText = new Date(el.p.time).toLocaleString()
 
   content.appendChild(message)
   content.appendChild(time)
