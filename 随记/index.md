@@ -14,6 +14,13 @@ let avatarMap = {
   me: app.vault.adapter.getResourcePath("随记/settings/avatar.png")
 }
 
+// ===== 缓存已解析的消息（全局持久化，避免重复 I/O 和解析） =====
+if (!window.messageCache) {
+    window.messageCache = new Map()  // 只在首次运行时创建，key: file.path, value: 已解析的消息数组
+    console.log("缓存初始化")
+}
+console.log("当前缓存大小：", window.messageCache.size)
+
 // ===== 清空容器 =====
 dv.container.innerHTML = ""
 
@@ -60,7 +67,8 @@ function parseMessagesFromContent(fileContent) {
 
   // 第一个元素通常为空（如果文件以 --- 开头）或 frontmatter 之前的内容
   // 从索引 1 开始，每两个元素为一组（yaml + body）
-  for (let i = 1; i < sections.length; i += 2) {
+  const sectionsLen = sections.length;
+  for (let i = 1; i < sectionsLen; i += 2) {
     let yamlBlock = sections[i].trim();
     let bodyText = (sections[i + 1] || "").trim();
     if (!yamlBlock) continue;
@@ -134,11 +142,30 @@ sender: me
 
 ${messageInput.value}
 `
+    let targetFile;
     let existingFile = app.vault.getAbstractFileByPath(dailyFilePath);
     if (existingFile) {
       await app.vault.append(existingFile, "\n\n" + messageBlock.trim() + "\n"); // 文件存在，追加
+      targetFile = existingFile
     } else {
-      await app.vault.create(dailyFilePath, messageBlock.trim() + "\n"); // 不存在，创建
+      targetFile = await app.vault.create(dailyFilePath, messageBlock.trim() + "\n"); // 不存在，创建
+    }
+
+    // 缓存更新
+    if (targetFile) {
+      try {
+        const updatedContent = await app.vault.read(targetFile);
+        const updatedMessages = parseMessagesFromContent(updatedContent);
+        window.messageCache.set(dailyFilePath, {
+          mtime: targetFile.stat.mtime,
+          messages: updatedMessages
+        });
+        console.log("🔄 已更新缓存", dailyFilePath);
+      } catch (e) {
+        // 读取失败则删除缓存，下次重新从磁盘读
+        window.messageCache.delete(dailyFilePath);
+        console.warn("缓存更新失败，已删除", dailyFilePath);
+      }
     }
 
     document.body.removeChild(modalOverlay)
@@ -180,14 +207,28 @@ addMessageBtn.onclick = () => showInput()
 
 dv.container.appendChild(addMessageBtn)
 
-// ===== 并行读取数据 =====
+// ===== 并行读取数据（使用缓存） =====
 const allMessageBatches = await Promise.all(
   dailyFiles.map(async file => {
     if (!file || file.extension !== "md") return [];
 
-    let fileContent = await app.vault.read(file);
+    // 如果缓存命中，直接返回
+    let cached = window.messageCache.get(file.path)
+    if (cached && cached.mtime === file.stat.mtime) {
+      console.log("缓存命中", file.path);
+      return cached.messages;
+    }
+    if (cached) {
+      console.log("缓存失效（文件已更改）", file.path)
+      window.messageCache.delete(file.path); // 删除失效的缓存数据
+    }
 
-    return parseMessagesFromContent(fileContent); // 返回消息数组
+    // 首次读取或缓存失效：读文件 -> 解析 -> 存入缓存
+    console.log("从磁盘读取", file.path)
+    let fileContent = await app.vault.read(file);
+    let messages = parseMessagesFromContent(fileContent); // 返回解析后的消息数组
+    window.messageCache.set(file.path, {mtime: file.stat.mtime, messages: messages});
+    return messages;
   })
 )
 
