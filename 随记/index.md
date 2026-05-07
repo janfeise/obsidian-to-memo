@@ -20,6 +20,38 @@ dv.container.innerHTML = ""
 let container = document.createElement("div")
 container.className = "chat-container"
 
+// ===== 封装：创建消息 DOM 元素 =====
+function createMessageItem(sender, body, time, avatarMap) {
+  let item = document.createElement("div")
+  item.className = "chat-item" + (sender === "me" ? " chat-item-me" : "")
+
+  // avatar
+  let avatar = document.createElement("img")
+  avatar.className = "chat-avatar"
+  avatar.src = avatarMap[sender] || avatarMap["me"]
+
+  // content
+  let content = document.createElement("div")
+  content.className = "chat-content"
+
+  let message = document.createElement("div")
+  message.className = "chat-message"
+  message.innerText = body
+
+  // time
+  let time = document.createElement("div")
+  time.className = "chat-time"
+  time.innerText = new Date(time).toLocaleString()
+
+  content.appendChild(message)
+  content.appendChild(time)
+
+  item.appendChild(avatar)
+  item.appendChild(content)
+
+  return item
+}
+
 // ===== 输入弹窗 =====
 function showInput(callback) {
   let overlay = document.createElement("div")
@@ -80,10 +112,12 @@ ${input.value}
     await app.vault.create(filePath, content)
 
     document.body.removeChild(overlay)
-    new Notice("Message 已发送")
 
-    // 修复：使用正确的方式刷新 DataviewJS
-    app.workspace.activeLeaf.rebuildView()
+    // message文件创建成功后，添加到dom元素后
+    let newItem = createMessageItem("me", input.value, now, avatarMap)
+    container.prepend(newItem)
+
+    new Notice("Message 已发送")
   }
 
   // ===== 支持回车键发送 =====
@@ -141,34 +175,7 @@ const fragment = new DocumentFragment();
 for (let el of messages) {
   if (!el) continue;
 
-  let item = document.createElement("div")
-  item.className = "chat-item" + (el.p.sender === "me" ? " chat-item-me" : "")
-
-  // avatar
-  let avatar = document.createElement("img")
-  avatar.className = "chat-avatar"
-  avatar.src = avatarMap[el.p.sender] || avatarMap["me"]
-
-  // content
-  let content = document.createElement("div")
-  content.className = "chat-content"
-
-  let message = document.createElement("div")
-  message.className = "chat-message"
-
-  // 直接读取 body（去掉 YAML）
-  message.innerText = el.body
-
-  // time
-  let time = document.createElement("div")
-  time.className = "chat-time"
-  time.innerText = new Date(el.p.time).toLocaleString()
-
-  content.appendChild(message)
-  content.appendChild(time)
-
-  item.appendChild(avatar)
-  item.appendChild(content)
+  let item = createMessageItem(el.p.sender, el.body, el.p.time, avatarMap)
 
   fragment.appendChild(item);
 }
