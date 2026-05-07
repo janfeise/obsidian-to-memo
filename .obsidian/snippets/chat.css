@@ -14,13 +14,8 @@
 }
 
 /* 隐藏底部操作栏 */
-.app-container:has(.chat-container) .mobile-toolbar {
-  opacity: 0;
-  transition: opacity 0.2s;
-}
-.app-container:has(.chat-container) .mobile-toolbar:active,
-.app-container:has(.chat-container) .mobile-toolbar:focus-within {
-  opacity: 1;
+body:has(.chat-container) .mobile-navbar {
+  display: none !important;
 }
 
 /* 隐藏底部状态栏 */
@@ -33,7 +28,8 @@
   display: flex;
   flex-direction: column;
   gap: 12px;
-  padding: 200px 0;
+  padding: 200px 0; /* 电脑端间距 */
+  /* padding: 120px 0; */ /* 移动端间距 */
   background: transparent;
 }
 
