@@ -287,3 +287,204 @@ button.mod-cta:active {
   cursor: not-allowed;
   transform: none;
 }
+
+/* ==================== 编辑面板（Bottom Sheet） ==================== */
+
+.chat-edit-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.4);
+  z-index: 9999;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  animation: fadeIn 0.2s ease-out;
+}
+
+.chat-edit-panel {
+  width: 100%;
+  max-width: 600px;
+  max-height: 70vh;
+  background: var(--background-primary);
+  border-radius: 16px 16px 0 0;
+  padding: 16px 20px 24px;
+  box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.15);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  animation: slideUp 0.3s ease-out;
+  transition: transform 0.2s ease-out;
+  overflow-y: auto;
+}
+
+.chat-edit-handle {
+  width: 36px;
+  height: 4px;
+  background: var(--background-modifier-border);
+  border-radius: 2px;
+  margin: -8px auto 0;
+  flex-shrink: 0;
+  cursor: grab;
+  touch-action: none;
+  background-clip: content-box;
+  padding: 8px 0;
+}
+
+.chat-edit-time {
+  font-size: 13px;
+  color: var(--text-muted);
+  padding: 0 4px;
+  flex-shrink: 0;
+}
+
+.chat-edit-textarea {
+  width: 100%;
+  min-height: 100px;
+  max-height: 40vh;
+  padding: 12px 14px;
+  font-size: 15px;
+  line-height: 1.6;
+  border: 1.5px solid var(--background-modifier-border);
+  border-radius: 10px;
+  background: var(--background-secondary);
+  color: var(--text-normal);
+  resize: vertical;
+  font-family: inherit;
+  box-sizing: border-box;
+  flex-shrink: 0;
+}
+
+.chat-edit-textarea:focus {
+  outline: none;
+  border-color: var(--interactive-accent);
+}
+
+/* 编辑面板按钮容器 */
+.chat-edit-buttons {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+  flex-shrink: 0;
+}
+
+.chat-edit-btn-delete {
+  padding: 10px 24px;
+  border: none;
+  border-radius: 8px;
+  font-size: 15px;
+  font-weight: 500;
+  cursor: pointer;
+  background: transparent;
+  color: #e53935 !important;
+  transition: background 0.15s ease;
+}
+
+.chat-edit-btn-delete:active {
+  background: rgba(229, 57, 53, 0.1);
+}
+
+.chat-edit-btn-confirm {
+  padding: 10px 24px;
+  border: none;
+  border-radius: 8px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  background: var(--interactive-accent);
+  color: white;
+  transition: all 0.15s ease;
+}
+
+.chat-edit-btn-confirm:active {
+  transform: scale(0.96);
+  opacity: 0.85;
+}
+
+.chat-edit-btn-confirm:disabled {
+  opacity: 0.5;
+}
+
+/* ==================== 删除确认（Action Sheet） ==================== */
+
+.chat-delete-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.4);
+  z-index: 10000;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  animation: fadeIn 0.15s ease-out;
+}
+
+.chat-delete-sheet {
+  width: 85%;
+  max-width: 320px;
+  background: var(--background-primary);
+  border-radius: 14px;
+  padding: 24px 20px 16px;
+  text-align: center;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.2);
+  animation: slideUp 0.2s ease-out;
+}
+
+.chat-delete-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-normal);
+  margin-bottom: 6px;
+}
+
+.chat-delete-hint {
+  font-size: 13px;
+  color: var(--text-muted);
+  margin-bottom: 20px;
+}
+
+.chat-delete-btn-confirm {
+  display: block;
+  width: 100%;
+  padding: 12px 0;
+  margin-bottom: 8px;
+  border: none;
+  border-radius: 10px;
+  font-size: 16px;
+  font-weight: 500;
+  cursor: pointer;
+  background: #e53935 !important;
+  color: white !important;
+  transition: all 0.15s ease;
+}
+
+.chat-delete-btn-confirm:active {
+  transform: scale(0.97);
+  opacity: 0.85;
+}
+
+.chat-delete-btn-confirm:disabled {
+  opacity: 0.5;
+}
+
+.chat-delete-btn-cancel {
+  display: block;
+  width: 100%;
+  padding: 12px 0;
+  border: none;
+  border-radius: 10px;
+  font-size: 16px;
+  font-weight: 500;
+  cursor: pointer;
+  background: var(--background-secondary);
+  color: var(--text-normal);
+  transition: background 0.15s ease;
+}
+
+.chat-delete-btn-cancel:active {
+  background: var(--background-modifier-border);
+}
