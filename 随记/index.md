@@ -47,7 +47,7 @@ function createMessageItem(msg, avatarMap) {
     let contentWrapper = document.createElement("div")
     contentWrapper.className = "chat-content"
 
-    let messageBody = document.createElement("div")
+    let messageBody = document.createElement("p")
     messageBody.className = "chat-message"
     messageBody.innerText = msg.body
 
