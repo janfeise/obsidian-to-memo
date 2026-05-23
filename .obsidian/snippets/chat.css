@@ -28,8 +28,8 @@ body:has(.chat-container) .mobile-navbar {
   display: flex;
   flex-direction: column;
   gap: 12px;
-  /* padding: 200px 0; 电脑端间距 */
-  padding: 120px 0; /* 移动端间距 */
+  padding: 200px 0; /* 电脑端间距 */
+  /* padding: 120px 0; 移动端间距 */
   background: transparent;
 }
 
@@ -79,7 +79,7 @@ body:has(.chat-container) .mobile-navbar {
 .chat-message {
   width: 100%;
   padding: 12px 16px;
-  margin-bottom: 0 !important;
+  margin: 0 !important;
   border-radius: 12px;
   font-size: 14px;
   line-height: 1.6;
