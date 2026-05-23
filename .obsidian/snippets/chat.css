@@ -77,7 +77,8 @@ body:has(.chat-container) .mobile-navbar {
 
 /* ===== 气泡消息 ===== */
 .chat-message {
-  width: 100%;
+  width: fit-content;
+  max-width: 100%;
   padding: 12px 16px;
   margin: 0 !important;
   border-radius: 12px;
