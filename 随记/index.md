@@ -5,6 +5,12 @@ banner_x: 0.5
 ---
 
 ```dataviewjs
+const isFirstInit = !window.messageChatInitialized
+
+if (!window.messageChatInitialized) {
+    window.messageChatInitialized = true
+}
+
 let dailyFiles = app.vault.getFiles()
     .filter(f => f.path.startsWith("随记/messages/") && f.extension === "md")
     .sort((a, b) => b.name.localeCompare(a.name)); // 按日期降序
@@ -21,12 +27,36 @@ if (!window.messageCache) {
 }
 console.log("当前缓存大小：", window.messageCache.size)
 
-// ===== 清空容器 =====
-dv.container.innerHTML = ""
+// ===== 全局 Root（脱离 Dataview） =====
+const mountParent = dv.container.parentElement
 
-// ===== 根容器 =====
-let chatContainer = document.createElement("div")
-chatContainer.className = "chat-container"
+if (!window.messageChatRoot) {
+    const root = document.createElement("div")
+    root.id = "message-chat-root"
+
+    window.messageChatRoot = root
+}
+
+// ===== 已存在则直接复用 =====
+const root = window.messageChatRoot
+
+if (mountParent) {
+    if (root.parentElement !== mountParent) {
+        mountParent.insertBefore(root, dv.container)
+    }
+} else if (root.parentElement !== dv.container) {
+    dv.container.appendChild(root)
+}
+
+// ===== 避免重复创建 =====
+let chatContainer = root.querySelector(".chat-container")
+
+if (!chatContainer) {
+    chatContainer = document.createElement("div")
+    chatContainer.className = "chat-container"
+
+    root.appendChild(chatContainer)
+}
 
 // ===== 封装：创建消息 DOM 元素 =====
 function createMessageItem(msg, avatarMap) {
@@ -313,40 +343,44 @@ function generateMessageId() {
 
 // ==================== 事件委托（核心：只有一个监听器） ====================
 
-chatContainer.addEventListener("click", (e) => {
-    const chatItem = e.target.closest(".chat-item-me")
-    if (!chatItem) return
-    if (e.target.closest(".chat-edit-panel") || e.target.closest(".chat-delete-sheet")) return
-    openEditPanel(chatItem)
-})
+if (!window.messageChatEventsBound) {
+    // ---- 长按 → 快捷删除 ----
+    let longPressTimer = null
+    let longPressTarget = null
 
-// ---- 长按 → 快捷删除 ----
-let longPressTimer = null
-let longPressTarget = null
+    chatContainer.addEventListener("click", (e) => {
+        const chatItem = e.target.closest(".chat-item-me")
+        if (!chatItem) return
+        if (e.target.closest(".chat-edit-panel") || e.target.closest(".chat-delete-sheet")) return
+        openEditPanel(chatItem)
+    })
 
-chatContainer.addEventListener("touchstart", (e) => {
-    const chatItem = e.target.closest(".chat-item-me")
-    if (!chatItem) return
-    longPressTarget = chatItem
-    longPressTimer = setTimeout(() => {
-        if (longPressTarget) {
-            const filePath = longPressTarget.dataset.filePath
-            const messageId = longPressTarget.dataset.id
-            showDeleteConfirm(longPressTarget, filePath, messageId)
-            longPressTarget = null
-        }
-    }, 600)
-}, { passive: true })
+    chatContainer.addEventListener("touchstart", (e) => {
+        const chatItem = e.target.closest(".chat-item-me")
+        if (!chatItem) return
+        longPressTarget = chatItem
+        longPressTimer = setTimeout(() => {
+            if (longPressTarget) {
+                const filePath = longPressTarget.dataset.filePath
+                const messageId = longPressTarget.dataset.id
+                showDeleteConfirm(longPressTarget, filePath, messageId)
+                longPressTarget = null
+            }
+        }, 600)
+    }, { passive: true })
 
-chatContainer.addEventListener("touchend", () => {
-    clearTimeout(longPressTimer)
-    longPressTarget = null
-})
+    chatContainer.addEventListener("touchend", () => {
+        clearTimeout(longPressTimer)
+        longPressTarget = null
+    })
 
-chatContainer.addEventListener("touchmove", () => {
-    clearTimeout(longPressTimer)
-    longPressTarget = null
-})
+    chatContainer.addEventListener("touchmove", () => {
+        clearTimeout(longPressTimer)
+        longPressTarget = null
+    })
+
+    window.messageChatEventsBound = true
+}
 
 // ===== 解析单个文件中的所有消息: 由于按天存储，一个文件可能存在多个数据 =====
 function parseMessagesFromContent(fileContent, filePath) {
@@ -548,53 +582,61 @@ ${messageInput.value}
 }
 
 // ===== 按钮 =====
-let addMessageBtn = document.createElement("button")
-addMessageBtn.innerText = ""
-addMessageBtn.className = "btn-add-message"
-addMessageBtn.style.marginBottom = "10px"
-addMessageBtn.onclick = () => showInput()
+let addMessageBtn = root.querySelector(".btn-add-message")
+if (!addMessageBtn) {
+    addMessageBtn = document.createElement("button")
+    addMessageBtn.innerText = ""
+    addMessageBtn.className = "btn-add-message"
+    addMessageBtn.style.marginBottom = "10px"
+    addMessageBtn.onclick = () => showInput()
 
-dv.container.appendChild(addMessageBtn)
-
-// ===== 并行读取数据（使用缓存） =====
-const allMessageBatches = await Promise.all(
-    dailyFiles.map(async file => {
-        if (!file || file.extension !== "md") return [];
-
-        // 如果缓存命中，直接返回
-        let cached = window.messageCache.get(file.path)
-        if (cached && cached.mtime === file.stat.mtime) {
-            console.log("缓存命中", file.path);
-            return cached.messages;
-        }
-        if (cached) {
-            console.log("缓存失效（文件已更改）", file.path)
-            window.messageCache.delete(file.path); // 删除失效的缓存数据
-        }
-
-        // 首次读取或缓存失效：读文件 -> 解析 -> 存入缓存
-        console.log("从磁盘读取", file.path)
-        let fileContent = await app.vault.read(file);
-        let messages = parseMessagesFromContent(fileContent, file.path); // 返回解析后的消息数组
-        window.messageCache.set(file.path, { mtime: file.stat.mtime, messages: messages });
-        return messages;
-    })
-)
-
-// ===== 拍平数组并排序 =====
-let sortedMessages = allMessageBatches.flat().sort((a, b) => b.time - a.time);
-
-// ===== 渲染消息 =====
-// 使用 documentFragment 避免频繁的dom插入
-const domFragment = new DocumentFragment();
-for (let msg of sortedMessages) {
-    if (!msg) continue;
-
-    let chatItem = createMessageItem(msg, avatarMap)
-
-    domFragment.appendChild(chatItem);
+    root.appendChild(addMessageBtn)
 }
-chatContainer.appendChild(domFragment)
 
-dv.container.appendChild(chatContainer)
+const hasRenderedItems = !!root.querySelector(".chat-item")
+
+if (!hasRenderedItems) {
+    // ===== 并行读取数据（使用缓存） =====
+    const allMessageBatches = await Promise.all(
+        dailyFiles.map(async file => {
+            if (!file || file.extension !== "md") return [];
+
+            // 如果缓存命中，直接返回
+            let cached = window.messageCache.get(file.path)
+            if (cached && cached.mtime === file.stat.mtime) {
+                console.log("缓存命中", file.path);
+                return cached.messages;
+            }
+            if (cached) {
+                console.log("缓存失效（文件已更改）", file.path)
+                window.messageCache.delete(file.path); // 删除失效的缓存数据
+            }
+
+            // 首次读取或缓存失效：读文件 -> 解析 -> 存入缓存
+            console.log("从磁盘读取", file.path)
+            let fileContent = await app.vault.read(file);
+            let messages = parseMessagesFromContent(fileContent, file.path); // 返回解析后的消息数组
+            window.messageCache.set(file.path, { mtime: file.stat.mtime, messages: messages });
+            return messages;
+        })
+    )
+
+    // ===== 拍平数组并排序 =====
+    let sortedMessages = allMessageBatches.flat().sort((a, b) => b.time - a.time);
+
+    // ===== 渲染消息 =====
+    // 使用 documentFragment 避免频繁的dom插入
+    chatContainer.innerHTML = ""
+    const domFragment = new DocumentFragment();
+    for (let msg of sortedMessages) {
+        if (!msg) continue;
+
+        let chatItem = createMessageItem(msg, avatarMap)
+
+        domFragment.appendChild(chatItem);
+    }
+    chatContainer.appendChild(domFragment)
+
+    root.appendChild(chatContainer)
+}
 ```
